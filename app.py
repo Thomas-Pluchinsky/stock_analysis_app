@@ -180,6 +180,26 @@ tab1, tab2, tab3 = st.tabs(
 # TAB 1 — Price & Return Analysis  (§2.2)
 # =========================================================
 with tab1:
+    st.subheader("Key Metrics")
+    metric_stock = st.selectbox("Select stock", valid_tickers, key="metric_stock")
+
+    latest_close = float(prices[metric_stock].iloc[-1])
+    total_return = float((prices[metric_stock].iloc[-1] / prices[metric_stock].iloc[0]) - 1)
+    volatility = float(returns[metric_stock].std())
+    ann_volatility = volatility * math.sqrt(252)
+    max_close = float(prices[metric_stock].max())
+    min_close = float(prices[metric_stock].min())
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Latest Close", f"${latest_close:,.2f}")
+    col2.metric("Total Return", f"{total_return:.2%}")
+    col3.metric("Annualized Volatility", f"{ann_volatility:.2%}")
+
+    col4, col5, _ = st.columns(3)
+    col4.metric("Period High", f"${max_close:,.2f}")
+    col5.metric("Period Low", f"${min_close:,.2f}")
+
+    st.divider()
     st.subheader("Adjusted Close Prices")
     selected_price = st.multiselect(
         "Select stocks to display",
