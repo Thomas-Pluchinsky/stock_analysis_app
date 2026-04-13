@@ -42,6 +42,11 @@ risk_free_rate = st.sidebar.number_input(
     "Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1
 ) / 100
 
+# Rolling volatility window
+vol_window = st.sidebar.slider(
+    "Rolling Volatility Window (days)", min_value=10, max_value=120, value=30, step=5
+)
+
 # -- Data download ----------------------------------------
 # We wrap the download in st.cache_data so repeated runs with
 # the same inputs don't re-download every time. The ttl (time-to-live)
@@ -75,6 +80,7 @@ if ticker:
     df["Daily Return"] = df["Close"].pct_change()
     df[f"{ma_window}-Day MA"] = df["Close"].rolling(window=ma_window).mean()
     df["Cumulative Return"] = (1 + df["Daily Return"]).cumprod() - 1
+    df["Rolling Volatility"] = df["Daily Return"].rolling(window=vol_window).std() * math.sqrt(252)
     if ma_window > len(df):
         st.warning(
             f"The selected {ma_window}-day window is longer than the "
@@ -185,6 +191,23 @@ if ticker:
         xaxis_title="Date", template="plotly_white", height=400
     )
     st.plotly_chart(fig_cum, width="stretch")
+
+    # -- Rolling volatility chart -------------------------
+    st.subheader("Rolling Annualized Volatility")
+
+    fig_roll_vol = go.Figure()
+    fig_roll_vol.add_trace(
+        go.Scatter(
+            x=df.index, y=df["Rolling Volatility"],
+            mode="lines", name=f"{vol_window}-Day Rolling Vol",
+            line=dict(color="crimson", width=1.5)
+        )
+    )
+    fig_roll_vol.update_layout(
+        yaxis_title="Annualized Volatility", yaxis_tickformat=".0%",
+        xaxis_title="Date", template="plotly_white", height=400
+    )
+    st.plotly_chart(fig_roll_vol, width="stretch")
     
     # -- Raw data (expandable) ----------------------------
     with st.expander("View Raw Data"):
