@@ -183,6 +183,16 @@ with tab1:
             fig_price.add_trace(
                 go.Scatter(x=prices.index, y=prices[sym], mode="lines", name=sym)
             )
+        for sym in selected_price:
+            ma = prices[sym].rolling(window=ma_window).mean()
+            fig_price.add_trace(
+                go.Scatter(
+                    x=ma.index, y=ma,
+                    mode="lines", name=f"{sym} {ma_window}d MA",
+                    line=dict(dash="dash", width=1),
+                    opacity=0.6,
+                )
+            )
         fig_price.update_layout(
             yaxis_title="Price (USD)",
             xaxis_title="Date",
