@@ -37,6 +37,11 @@ ma_window = st.sidebar.slider(
     "Moving Average Window (days)", min_value=5, max_value=200, value=50, step=5
 )
 
+# Risk-free rate for Sharpe ratio calculation
+risk_free_rate = st.sidebar.number_input(
+    "Risk-Free Rate (%)", min_value=0.0, max_value=20.0, value=4.5, step=0.1
+) / 100
+
 # -- Data download ----------------------------------------
 # We wrap the download in st.cache_data so repeated runs with
 # the same inputs don't re-download every time. The ttl (time-to-live)
@@ -83,6 +88,10 @@ if ticker:
     avg_daily_ret = float(df["Daily Return"].mean())
     volatility = float(df["Daily Return"].std())
     ann_volatility = volatility * math.sqrt(252)
+    ann_return = avg_daily_ret * 252
+    sharpe = (ann_return - risk_free_rate) / ann_volatility
+    skewness = float(df["Daily Return"].skew())
+    kurtosis = float(df["Daily Return"].kurtosis())
     max_close = float(df["Close"].max())
     min_close = float(df["Close"].min())
 
@@ -91,12 +100,18 @@ if ticker:
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Latest Close", f"${latest_close:,.2f}")
     col2.metric("Total Return", f"{total_return:.2%}")
-    col3.metric("Avg Daily Return", f"{avg_daily_ret:.4%}")
-    col4.metric("Annualized Volatility (sigma)", f"{ann_volatility:.2%}")
+    col3.metric("Annualized Return", f"{ann_return:.2%}")
+    col4.metric("Sharpe Ratio", f"{sharpe:.2f}")
 
-    col5, col6, _, _ = st.columns(4)
-    col5.metric("Period High", f"${max_close:,.2f}")
-    col6.metric("Period Low", f"${min_close:,.2f}")
+    col5, col6, col7, col8 = st.columns(4)
+    col5.metric("Annualized Volatility (sigma)", f"{ann_volatility:.2%}")
+    col6.metric("Skewness", f"{skewness:.2f}")
+    col7.metric("Excess Kurtosis", f"{kurtosis:.2f}")
+    col8.metric("Avg Daily Return", f"{avg_daily_ret:.4%}")
+
+    col9, col10, _, _ = st.columns(4)
+    col9.metric("Period High", f"${max_close:,.2f}")
+    col10.metric("Period Low", f"${min_close:,.2f}")
 
     st.divider()
 
