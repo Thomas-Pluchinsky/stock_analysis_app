@@ -36,13 +36,15 @@ for t in raw_tickers:
         tickers.append(t)
 if "^GSPC" in tickers:
     tickers.remove("^GSPC")
-    st.sidebar.warning("S&P 500 is included automatically as a benchmark. No need to enter it.")
+    st.sidebar.warning("S&P 500 is already included as a benchmark and cannot be entered as a ticker.")
 if len(tickers) < 2:
     st.sidebar.error("Please enter at least 2 ticker symbols.")
     st.stop()
 if len(tickers) > 5:
     st.sidebar.error("Please enter no more than 5 ticker symbols.")
     st.stop()
+
+show_benchmark = st.sidebar.checkbox("Show S&P 500 Benchmark", value=True)
 
 default_start = date.today() - timedelta(days=365 * 2)
 start_date = st.sidebar.date_input("Start Date", value=default_start, min_value=date(1970, 1, 1))
@@ -158,7 +160,12 @@ st.caption(
 
 stock_cols = valid_tickers + ([BENCHMARK] if has_benchmark else [])
 returns = prices[stock_cols].pct_change().dropna()
-all_tickers = valid_tickers + ([BENCHMARK] if has_benchmark else [])
+
+prices = prices.rename(columns={BENCHMARK: "S&P 500"})
+returns = returns.rename(columns={BENCHMARK: "S&P 500"})
+BENCH_LABEL = "S&P 500"
+
+all_tickers = valid_tickers + ([BENCH_LABEL] if has_benchmark else [])
 
 # -- Tabs -------------------------------------------------
 tab1, tab2, tab3 = st.tabs(
@@ -217,10 +224,10 @@ with tab1:
             go.Scatter(x=returns.index, y=returns[sym], mode="lines", name=sym,
                        line=dict(width=1))
         )
-    if has_benchmark:
+    if has_benchmark and show_benchmark:
         fig_returns.add_trace(
             go.Scatter(
-                x=returns.index, y=returns[BENCHMARK],
+                x=returns.index, y=returns[BENCH_LABEL],
                 mode="lines", name="S&P 500",
                 line=dict(dash="dash", color="gray", width=1),
             )
@@ -253,7 +260,7 @@ with tab1:
     for sym in valid_tickers:
         stats_rows[sym] = compute_stats(returns[sym])
     if has_benchmark:
-        stats_rows["S&P 500"] = compute_stats(returns[BENCHMARK])
+        stats_rows["S&P 500"] = compute_stats(returns[BENCH_LABEL])
 
     stats_df = pd.DataFrame(stats_rows).T
     fmt_df = stats_df.copy()
@@ -277,11 +284,11 @@ with tab1:
         fig_wealth.add_trace(
             go.Scatter(x=wealth.index, y=wealth[sym], mode="lines", name=sym)
         )
-    if has_benchmark:
+    if has_benchmark and show_benchmark:
         fig_wealth.add_trace(
             go.Scatter(
                 x=wealth.index,
-                y=wealth[BENCHMARK],
+                y=wealth[BENCH_LABEL],
                 mode="lines",
                 name="S&P 500",
                 line=dict(dash="dash", color="gray"),
@@ -313,10 +320,11 @@ with tab1:
 with tab2:
     st.subheader("Rolling Annualized Volatility")
 
-    rolling_vol = returns[all_tickers].rolling(window=vol_window).std() * math.sqrt(252)
+    vol_tickers = valid_tickers + ([BENCH_LABEL] if has_benchmark and show_benchmark else [])
+    rolling_vol = returns[vol_tickers].rolling(window=vol_window).std() * math.sqrt(252)
 
     fig_rvol = go.Figure()
-    for sym in all_tickers:
+    for sym in vol_tickers:
         fig_rvol.add_trace(
             go.Scatter(x=rolling_vol.index, y=rolling_vol[sym], mode="lines", name=sym)
         )
@@ -421,7 +429,8 @@ with tab2:
 
     st.subheader("Daily Return Distributions — All Stocks")
 
-    box_data = returns[all_tickers].melt(var_name="Stock", value_name="Daily Return")
+    box_tickers = valid_tickers + ([BENCH_LABEL] if has_benchmark and show_benchmark else [])
+    box_data = returns[box_tickers].melt(var_name="Stock", value_name="Daily Return")
     fig_box = px.box(
         box_data, x="Stock", y="Daily Return", color="Stock", template="plotly_white"
     )
@@ -435,7 +444,8 @@ with tab3:
     # -- Correlation heatmap ------------------------------
     st.subheader("Pairwise Correlation Matrix")
 
-    corr_matrix = returns[all_tickers].corr()
+    corr_tickers = all_tickers if show_benchmark else valid_tickers
+    corr_matrix = returns[corr_tickers].corr()
 
     fig_heat = go.Figure(
         data=go.Heatmap(
