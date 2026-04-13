@@ -16,7 +16,7 @@ uv.lock
 # OS files
 .DS_Store
 Thumbs.db
-
+.streamlit/
 
 
 # Byte-compiled / optimized / DLL files
