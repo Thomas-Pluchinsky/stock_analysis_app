@@ -196,6 +196,34 @@ with tab1:
 
     st.divider()
 
+    st.subheader("Daily Simple Returns")
+
+    fig_returns = go.Figure()
+    for sym in selected_price:
+        fig_returns.add_trace(
+            go.Scatter(x=returns.index, y=returns[sym], mode="lines", name=sym,
+                       line=dict(width=1))
+        )
+    if has_benchmark:
+        fig_returns.add_trace(
+            go.Scatter(
+                x=returns.index, y=returns[BENCHMARK],
+                mode="lines", name="S&P 500",
+                line=dict(dash="dash", color="gray", width=1),
+            )
+        )
+    fig_returns.update_layout(
+        yaxis_title="Daily Return",
+        xaxis_title="Date",
+        yaxis_tickformat=".1%",
+        template="plotly_white",
+        height=400,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02),
+    )
+    st.plotly_chart(fig_returns, use_container_width=True)
+
+    st.divider()
+
     st.subheader("Summary Statistics")
 
     def compute_stats(r):
