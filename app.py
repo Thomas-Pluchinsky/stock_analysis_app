@@ -34,7 +34,9 @@ for t in raw_tickers:
     if t not in seen:
         seen.add(t)
         tickers.append(t)
-
+if "^GSPC" in tickers:
+    tickers.remove("^GSPC")
+    st.sidebar.warning("S&P 500 is included automatically as a benchmark. No need to enter it.")
 if len(tickers) < 2:
     st.sidebar.error("Please enter at least 2 ticker symbols.")
     st.stop()
@@ -156,6 +158,7 @@ st.caption(
 
 stock_cols = valid_tickers + ([BENCHMARK] if has_benchmark else [])
 returns = prices[stock_cols].pct_change().dropna()
+all_tickers = valid_tickers + ([BENCHMARK] if has_benchmark else [])
 
 # -- Tabs -------------------------------------------------
 tab1, tab2, tab3 = st.tabs(
@@ -310,10 +313,10 @@ with tab1:
 with tab2:
     st.subheader("Rolling Annualized Volatility")
 
-    rolling_vol = returns[valid_tickers].rolling(window=vol_window).std() * math.sqrt(252)
+    rolling_vol = returns[all_tickers].rolling(window=vol_window).std() * math.sqrt(252)
 
     fig_rvol = go.Figure()
-    for sym in valid_tickers:
+    for sym in all_tickers:
         fig_rvol.add_trace(
             go.Scatter(x=rolling_vol.index, y=rolling_vol[sym], mode="lines", name=sym)
         )
@@ -332,7 +335,7 @@ with tab2:
     st.subheader("Return Distribution Analysis")
 
     dist_stock = st.selectbox(
-        "Select a stock for distribution analysis", valid_tickers, key="dist_stock"
+        "Select a stock for distribution analysis", all_tickers, key="dist_stock"
     )
     r_series = returns[dist_stock].dropna()
 
@@ -418,7 +421,7 @@ with tab2:
 
     st.subheader("Daily Return Distributions — All Stocks")
 
-    box_data = returns[valid_tickers].melt(var_name="Stock", value_name="Daily Return")
+    box_data = returns[all_tickers].melt(var_name="Stock", value_name="Daily Return")
     fig_box = px.box(
         box_data, x="Stock", y="Daily Return", color="Stock", template="plotly_white"
     )
@@ -432,7 +435,7 @@ with tab3:
     # -- Correlation heatmap ------------------------------
     st.subheader("Pairwise Correlation Matrix")
 
-    corr_matrix = returns[valid_tickers].corr()
+    corr_matrix = returns[all_tickers].corr()
 
     fig_heat = go.Figure(
         data=go.Heatmap(
@@ -461,10 +464,10 @@ with tab3:
     st.subheader("Return Scatter Plot")
 
     col_s1, col_s2 = st.columns(2)
-    scatter_a = col_s1.selectbox("Stock A", valid_tickers, index=0, key="scatter_a")
+    scatter_a = col_s1.selectbox("Stock A", all_tickers, index=0, key="scatter_a")
     scatter_b = col_s2.selectbox(
         "Stock B",
-        valid_tickers,
+        all_tickers,
         index=min(1, len(valid_tickers) - 1),
         key="scatter_b",
     )
@@ -498,10 +501,10 @@ with tab3:
     st.subheader("Rolling Correlation")
 
     col_r1, col_r2, col_r3 = st.columns(3)
-    roll_a = col_r1.selectbox("Stock A", valid_tickers, index=0, key="roll_a")
+    roll_a = col_r1.selectbox("Stock A", all_tickers, index=0, key="roll_a")
     roll_b = col_r2.selectbox(
         "Stock B",
-        valid_tickers,
+        all_tickers,
         index=min(1, len(valid_tickers) - 1),
         key="roll_b",
     )
@@ -545,10 +548,10 @@ with tab3:
     )
 
     col_p1, col_p2 = st.columns(2)
-    port_a = col_p1.selectbox("Stock A", valid_tickers, index=0, key="port_a")
+    port_a = col_p1.selectbox("Stock A", all_tickers, index=0, key="port_a")
     port_b = col_p2.selectbox(
         "Stock B",
-        valid_tickers,
+        all_tickers,
         index=min(1, len(valid_tickers) - 1),
         key="port_b",
     )
