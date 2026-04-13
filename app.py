@@ -69,6 +69,7 @@ if ticker:
     # -- Compute a derived column -------------------------
     df["Daily Return"] = df["Close"].pct_change()
     df[f"{ma_window}-Day MA"] = df["Close"].rolling(window=ma_window).mean()
+    df["Cumulative Return"] = (1 + df["Daily Return"]).cumprod() - 1
     if ma_window > len(df):
         st.warning(
             f"The selected {ma_window}-day window is longer than the "
@@ -78,22 +79,24 @@ if ticker:
 
     # -- Key metrics --------------------------------------
     latest_close = float(df["Close"].iloc[-1])
-    total_return = float((df["Close"].iloc[-1] / df["Close"].iloc[0]) - 1)
+    total_return = float(df["Cumulative Return"].iloc[-1])
+    avg_daily_ret = float(df["Daily Return"].mean())
     volatility = float(df["Daily Return"].std())
-    ann_volatility = volatility * math.sqrt(252)  # Annualize: daily sigma * sqrt(trading days)
+    ann_volatility = volatility * math.sqrt(252)
     max_close = float(df["Close"].max())
     min_close = float(df["Close"].min())
 
     st.subheader(f"{ticker} — Key Metrics")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("Latest Close", f"${latest_close:,.2f}")
-    col2.metric("1-Year Return", f"{total_return:.2%}")
-    col3.metric("Annualized Volatility (sigma)", f"{ann_volatility:.2%}")
+    col2.metric("Total Return", f"{total_return:.2%}")
+    col3.metric("Avg Daily Return", f"{avg_daily_ret:.4%}")
+    col4.metric("Annualized Volatility (sigma)", f"{ann_volatility:.2%}")
 
-    col4, col5, _ = st.columns(3)
-    col4.metric("Period High", f"${max_close:,.2f}")
-    col5.metric("Period Low", f"${min_close:,.2f}")
+    col5, col6, _, _ = st.columns(4)
+    col5.metric("Period High", f"${max_close:,.2f}")
+    col6.metric("Period Low", f"${min_close:,.2f}")
 
     st.divider()
 
@@ -150,6 +153,23 @@ if ticker:
         template="plotly_white", height=350
     )
     st.plotly_chart(fig_hist, width="stretch")
+    
+    # -- Cumulative return chart --------------------------
+    st.subheader("Cumulative Return Over Time")
+
+    fig_cum = go.Figure()
+    fig_cum.add_trace(
+        go.Scatter(
+            x=df.index, y=df["Cumulative Return"],
+            mode="lines", name="Cumulative Return",
+            fill="tozeroy", line=dict(color="teal")
+        )
+    )
+    fig_cum.update_layout(
+        yaxis_title="Cumulative Return", yaxis_tickformat=".0%",
+        xaxis_title="Date", template="plotly_white", height=400
+    )
+    st.plotly_chart(fig_cum, width="stretch")
 
 
 
