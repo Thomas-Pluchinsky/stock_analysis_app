@@ -120,6 +120,38 @@ if ticker:
         template="plotly_white", height=450
     )
     st.plotly_chart(fig, width="stretch")
+    
+    # -- Volume chart -------------------------------------
+    st.subheader("Daily Trading Volume")
+
+    fig_vol = go.Figure()
+    fig_vol.add_trace(
+        go.Bar(x=df.index, y=df["Volume"], name="Volume",
+               marker_color="steelblue", opacity=0.7)
+    )
+    fig_vol.update_layout(
+        yaxis_title="Shares Traded", xaxis_title="Date",
+        template="plotly_white", height=350
+    )
+    st.plotly_chart(fig_vol, width="stretch")
+
+    # -- Daily returns distribution -----------------------
+    st.subheader("Distribution of Daily Returns")
+
+    fig_hist = go.Figure()
+    fig_hist.add_trace(
+        go.Histogram(
+            x=df["Daily Return"].dropna(), nbinsx=60,
+            marker_color="mediumpurple", opacity=0.75
+        )
+    )
+    fig_hist.update_layout(
+        xaxis_title="Daily Return", yaxis_title="Frequency",
+        template="plotly_white", height=350
+    )
+    st.plotly_chart(fig_hist, width="stretch")
+
+
 
 else:
     st.info("Enter a stock ticker in the sidebar to get started.")
