@@ -10,6 +10,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import date, timedelta
 import math
+import numpy as np
+from scipy import stats
 
 # -- Page configuration ----------------------------------
 # st.set_page_config must be the FIRST Streamlit command in the script.
@@ -162,18 +164,41 @@ if ticker:
     # -- Daily returns distribution -----------------------
     st.subheader("Distribution of Daily Returns")
 
+    returns_clean = df["Daily Return"].dropna()
+
     fig_hist = go.Figure()
     fig_hist.add_trace(
         go.Histogram(
-            x=df["Daily Return"].dropna(), nbinsx=60,
-            marker_color="mediumpurple", opacity=0.75
+            x=returns_clean, nbinsx=60,
+            marker_color="mediumpurple", opacity=0.75,
+            name="Daily Returns", histnorm="probability density"
         )
     )
+
+    # Overlay a fitted normal distribution curve
+    x_range = np.linspace(float(returns_clean.min()), float(returns_clean.max()), 200)
+    mu = float(returns_clean.mean())
+    sigma = float(returns_clean.std())
+    fig_hist.add_trace(
+        go.Scatter(
+            x=x_range, y=stats.norm.pdf(x_range, mu, sigma),
+            mode="lines", name="Normal Distribution",
+            line=dict(color="red", width=2)
+        )
+    )
+
     fig_hist.update_layout(
-        xaxis_title="Daily Return", yaxis_title="Frequency",
+        xaxis_title="Daily Return", yaxis_title="Density",
         template="plotly_white", height=350
     )
     st.plotly_chart(fig_hist, width="stretch")
+
+    # Display normality test results
+    jb_stat, jb_pvalue = stats.jarque_bera(returns_clean)
+    st.caption(
+        f"**Jarque-Bera test:** statistic = {jb_stat:.2f}, p-value = {jb_pvalue:.4f} — "
+        f"{'Fail to reject normality (p > 0.05)' if jb_pvalue > 0.05 else 'Reject normality (p <= 0.05)'}"
+    )
     
     # -- Cumulative return chart --------------------------
     st.subheader("Cumulative Return Over Time")
