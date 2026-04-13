@@ -170,6 +170,10 @@ if ticker:
         xaxis_title="Date", template="plotly_white", height=400
     )
     st.plotly_chart(fig_cum, width="stretch")
+    
+    # -- Raw data (expandable) ----------------------------
+    with st.expander("View Raw Data"):
+        st.dataframe(df.tail(60), width="stretch")
 
 
 
