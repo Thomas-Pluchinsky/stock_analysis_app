@@ -614,7 +614,7 @@ with tab3:
             + (1 - weight_a) ** 2 * var_b
             + 2 * weight_a * (1 - weight_a) * cov_ab
         )
-        port_vol = math.sqrt(port_var)
+        port_vol = math.sqrt(max(port_var, 0))
 
         m1, m2, m3 = st.columns(3)
         m1.metric("Portfolio Ann. Return", f"{port_ret:.2%}")
@@ -623,11 +623,12 @@ with tab3:
 
         # Plot volatility curve across all weights
         weights = np.linspace(0, 1, 101)
-        vols = np.sqrt(
+        vols = np.sqrt(np.maximum(
             weights**2 * var_a
             + (1 - weights) ** 2 * var_b
-            + 2 * weights * (1 - weights) * cov_ab
-        )
+            + 2 * weights * (1 - weights) * cov_ab,
+            0
+        ))
 
         fig_port = go.Figure()
         fig_port.add_trace(
