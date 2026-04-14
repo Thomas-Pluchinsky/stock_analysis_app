@@ -120,11 +120,12 @@ def load_data(tickers_tuple, benchmark, start, end):
     prices = pd.concat(frames, axis=1)
     prices.columns = list(frames.keys())
 
+    prices = prices.dropna(how="all").ffill()
     threshold = len(prices) * 0.05
     cols_to_drop = [c for c in prices.columns if prices[c].isna().sum() > threshold]
     failed.extend([c for c in cols_to_drop if c != benchmark])
     prices = prices.drop(columns=cols_to_drop, errors="ignore")
-    prices = prices.dropna(how="all").ffill().dropna()
+    prices = prices.dropna()
 
     successful = [c for c in prices.columns if c != benchmark and c not in failed]
     return prices, failed, successful
