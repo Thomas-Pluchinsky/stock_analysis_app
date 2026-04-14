@@ -108,15 +108,18 @@ def load_data(tickers_tuple, benchmark, start, end):
                 df.columns = df.columns.get_level_values(0)
             close = df["Close"]
             if isinstance(close, pd.DataFrame):
-                close = close.squeeze()
-            frames[sym] = close
+                close = close.iloc[:, 0]
+            frames[sym] = close.copy()
         except Exception:
             failed.append(sym)
 
     if not frames:
         return pd.DataFrame(), failed, []
 
-    prices = pd.DataFrame(frames)
+    # Build DataFrame one column at a time instead of from dict
+    prices = pd.concat(frames, axis=1)
+    prices.columns = list(frames.keys())
+
     threshold = len(prices) * 0.05
     cols_to_drop = [c for c in prices.columns if prices[c].isna().sum() > threshold]
     failed.extend([c for c in cols_to_drop if c != benchmark])
