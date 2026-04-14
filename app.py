@@ -106,7 +106,10 @@ def load_data(tickers_tuple, benchmark, start, end):
                 continue
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
-            frames[sym] = df["Close"]
+            close = df["Close"]
+            if isinstance(close, pd.DataFrame):
+                close = close.squeeze()
+            frames[sym] = close
         except Exception:
             failed.append(sym)
 
